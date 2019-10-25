@@ -9,7 +9,7 @@
           :file-list="uploadFiles"
           :auto-upload="false"
           accept=".json, .geojson"
-          @on-change="uploadChange"
+          :on-change="uploadChange"
           :show-file-list="false"
         >
           <el-button slot="trigger" type="primary">选取文件</el-button>
@@ -275,6 +275,8 @@ export default {
             })
           });
           _this.map.addLayer(_this.hexagonLayer);
+          let extent = _this.hexagonLayer.getSource().getExtent();
+          _this.map.getView().fit(extent, _this.map.getSize());
         };
       }
     }
