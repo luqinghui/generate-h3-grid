@@ -96,7 +96,8 @@ export default {
       drawType: "None",
       vectorSource: null,
       hexagonLayer: null,
-      res: 12 // 0-15
+      res: 12, // 0-15
+      geojsonObject: null
     };
   },
   mounted() {
@@ -152,9 +153,15 @@ export default {
       // TODO 要素过大提示
       // TODO merge重叠的feature
 
-      const geojsonObject = {
-        type: "GeometryCollection",
-        geometries: []
+      this.geojsonObject = {
+        type: "FeatureCollection",
+        crs: {
+          type: "name",
+          properties: {
+            name: "EPSG:4326"
+          }
+        },
+        features: []
       };
 
       for (let i = 0; i < features.length; ++i) {
@@ -179,14 +186,17 @@ export default {
           geo = this.polygon2Hex(coord[0]);
         }
 
-        geojsonObject.geometries.push({
-          type: "MultiPolygon",
-          coordinates: geo
+        this.geojsonObject.features.push({
+          type: "Feature",
+          geometry: {
+            type: "MultiPolygon",
+            coordinates: geo
+          }
         });
       }
       this.hexagonLayer = new VectorLayer({
         source: new VectorSource({
-          features: new GeoJSON().readFeatures(geojsonObject)
+          features: new GeoJSON().readFeatures(this.geojsonObject)
         })
       });
 
@@ -194,6 +204,12 @@ export default {
     },
     exportClick: function() {
       // TODO 导出geojson文件
+      var blob = new Blob([JSON.stringify(this.geojsonObject)], {
+          type: "text/plain;charset=UTF-8"
+        }),
+        fileName = "grid.json";
+
+      this.downFile(blob, fileName);
     },
     point2Hex: function(point) {
       let idx = geoToH3(point[1], point[0], this.res);
@@ -221,6 +237,17 @@ export default {
         geos.push([h3ToGeoBoundary(element, true)]);
       });
       return geos;
+    },
+    downFile: function(blob, fileName) {
+      if (window.navigator.msSaveOrOpenBlob) {
+        navigator.msSaveBlob(blob, fileName);
+      } else {
+        var link = document.createElement("a");
+        link.href = window.URL.createObjectURL(blob);
+        link.download = fileName;
+        link.click();
+        window.URL.revokeObjectURL(link.href);
+      }
     }
   }
 };
