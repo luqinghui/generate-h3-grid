@@ -4,8 +4,6 @@ import App from "./App.vue";
 import "./assets/font/iconfont.js";
 import "./assets/font/iconfont.css";
 
-import "default-passive-events";
-
 import {
   Dropdown,
   DropdownItem,
