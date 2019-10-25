@@ -190,7 +190,7 @@ export default {
           type = "Polygon";
         }
 
-        let geo = null;
+        let geo = [];
 
         if (type === "Point") {
           geo = this.point2Hex(coord);
@@ -199,6 +199,10 @@ export default {
           geo = this.line2Hex(coord);
         } else if (type === "Polygon") {
           geo = this.polygon2Hex(coord[0]);
+        } else if (type === "MultiPolygon") {
+          for (let i = 0; i < coord.length; ++i) {
+            geo.push(...this.polygon2Hex(coord[i]));
+          }
         }
 
         this.geojsonObject.features.push({
@@ -269,13 +273,10 @@ export default {
         let fileReader = new FileReader();
         fileReader.readAsText(file.raw, "utf-8");
         fileReader.onload = function(e) {
-          _this.hexagonLayer = new VectorLayer({
-            source: new VectorSource({
-              features: new GeoJSON().readFeatures(JSON.parse(this.result))
-            })
-          });
-          _this.map.addLayer(_this.hexagonLayer);
-          let extent = _this.hexagonLayer.getSource().getExtent();
+          _this.vectorSource.addFeatures(
+            new GeoJSON().readFeatures(JSON.parse(this.result))
+          );
+          let extent = _this.vectorSource.getExtent();
           _this.map.getView().fit(extent, _this.map.getSize());
         };
       }
