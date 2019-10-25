@@ -2,7 +2,20 @@
   <div id="rootDiv">
     <div id="mapContainer" ref="mapContainer" class="mapDiv"></div>
     <div class="editButton">
-      <el-dropdown @command="drawClick" placement="top">
+      <div>
+        <el-upload
+          action="www.thisisnull.com"
+          ref="upload"
+          :file-list="uploadFiles"
+          :auto-upload="false"
+          accept=".json, .geojson"
+          @on-change="uploadChange"
+          :show-file-list="false"
+        >
+          <el-button slot="trigger" type="primary">选取文件</el-button>
+        </el-upload>
+      </div>
+      <el-dropdown @command="drawClick" placement="top" style="margin-top:5px;">
         <el-button type="primary">绘制图形</el-button>
         <el-dropdown-menu slot="dropdown">
           <el-dropdown-item command="Point">
@@ -27,10 +40,10 @@
           </el-dropdown-item>
         </el-dropdown-menu>
       </el-dropdown>
-      <div style="margin-top:5px">
+      <div style="margin-top:5px;">
         <el-button type="danger" @click="stopClick">停止绘制</el-button>
       </div>
-      <div style="margin-top:5px">
+      <div style="margin-top:5px;">
         <el-button type="info" @click="removeClick">清除图形</el-button>
       </div>
     </div>
@@ -49,7 +62,7 @@
         <el-button
           class="operationButton"
           id="h3Button"
-          v-on:click="h3Click"
+          @click="h3Click"
           type="primary"
           style="margin-top:5px;width:120px"
         >生成H3网格</el-button>
@@ -58,7 +71,7 @@
         <el-button
           class="operationButton"
           id="exportButton"
-          v-on:click="exportClick"
+          @click="exportClick"
           type="primary"
           style="margin-top:5px;width:120px;"
         >导出geojson</el-button>
@@ -84,6 +97,7 @@ import {
   h3SetToMultiPolygon,
   polyfill
 } from "h3-js";
+import { read } from "fs";
 
 export default {
   name: "Map",
@@ -97,7 +111,8 @@ export default {
       vectorSource: null,
       hexagonLayer: null,
       res: 12, // 0-15
-      geojsonObject: null
+      geojsonObject: null,
+      uploadFiles: []
     };
   },
   mounted() {
@@ -203,7 +218,6 @@ export default {
       this.map.addLayer(this.hexagonLayer);
     },
     exportClick: function() {
-      // TODO 导出geojson文件
       var blob = new Blob([JSON.stringify(this.geojsonObject)], {
           type: "text/plain;charset=UTF-8"
         }),
@@ -247,6 +261,21 @@ export default {
         link.download = fileName;
         link.click();
         window.URL.revokeObjectURL(link.href);
+      }
+    },
+    uploadChange(file, fileList) {
+      let _this = this;
+      if (file.raw) {
+        let fileReader = new FileReader();
+        fileReader.readAsText(file.raw, "utf-8");
+        fileReader.onload = function(e) {
+          _this.hexagonLayer = new VectorLayer({
+            source: new VectorSource({
+              features: new GeoJSON().readFeatures(JSON.parse(this.result))
+            })
+          });
+          _this.map.addLayer(_this.hexagonLayer);
+        };
       }
     }
   }
